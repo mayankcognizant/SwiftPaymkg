@@ -9,21 +9,20 @@ namespace SwiftPay.Domain.Remittance.Entities
 	{
 		[Key]
 		[MaxLength(64)]
-		public string RemitId { get; set; } = default!;
-
+		public string RemitId { get; set; }
 		// Foreign references (by ID only for Phase-1)
 		[Required, MaxLength(64)]
-		public string CustomerId { get; set; } = default!;
+		public string CustomerId { get; set; } 
 
 		[Required, MaxLength(64)]
-		public string BeneficiaryId { get; set; } = default!;
+		public string BeneficiaryId { get; set; }
 
 		// Currencies (ISO 4217)
 		[Required, MaxLength(3)]
-		public string FromCurrency { get; set; } = default!;
+		public string FromCurrency { get; set; } 
 
 		[Required, MaxLength(3)]
-		public string ToCurrency { get; set; } = default!;
+		public string ToCurrency { get; set; } 
 
 		// Amounts
 		[Column(TypeName = "decimal(18,2)")]
@@ -60,7 +59,7 @@ namespace SwiftPay.Domain.Remittance.Entities
 		[Required]
 		public DateTimeOffset CreatedDate { get; set; } = DateTimeOffset.UtcNow;
 
-		public DateTimeOffset? UpdatedDate { get; set; }
+		public DateTimeOffset? UpdatedDate { get; set; } = DateTimeOffset.UtcNow;
 
 		// Audit
 		[MaxLength(64)]
