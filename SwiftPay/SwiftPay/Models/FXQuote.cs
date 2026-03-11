@@ -12,6 +12,11 @@ namespace SwiftPay.FXModule.Api.Models
         public decimal OfferedRate { get; set; } 
         public DateTime QuoteTime { get; set; }
         public DateTime ValidUntil { get; set; } 
-        public string Status { get; set; } // Active or Expired
+        public string Status { get; set; } 
+
+        // Audit & Soft Delete Fields
+        public DateTime CreatedDate { get; set; }
+        public DateTime UpdateDate { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }
