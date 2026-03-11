@@ -20,6 +20,10 @@ namespace SwiftPay.Domain.Remittance.Entities
 
         public DateTimeOffset CheckedDate { get; set; }
 
+        public DateTimeOffset CreatedDate { get; set; }
+        public DateTimeOffset UpdateDate { get; set; }
+        public bool IsDeleted { get; set; }
+
         // Optimistic concurrency to prevent race conditions during compliance updates
         public byte[] RowVersion { get; set; }
 
