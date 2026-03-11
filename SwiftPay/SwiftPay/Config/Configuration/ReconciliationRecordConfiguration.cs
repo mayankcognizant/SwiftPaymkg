@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using YourNamespace.Models;
+using SwiftPay.Models;
 
 namespace SwiftPay.Config.Configuration
 {
