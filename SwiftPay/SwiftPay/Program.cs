@@ -39,8 +39,11 @@ builder.Services.AddScoped<SwiftPay.Services.Interfaces.IKYCRecordService, Swift
 builder.Services.AddScoped<SwiftPay.Repositories.Interfaces.INotificationAlertRepository, SwiftPay.Repositories.NotificationAlertRepository>();
 builder.Services.AddScoped<SwiftPay.Services.Interfaces.INotificationAlertService, SwiftPay.Services.NotificationAlertService>();
 
+builder.Services.AddScoped<SwiftPay.Services.Interfaces.IAmendmentService, SwiftPay.Services.AmendmentService>();       
+builder.Services.AddScoped<SwiftPay.Repositories.Interfaces.IAmendmentRepository, SwiftPay.Repositories.AmendmentRepository>();     
+
 // AutoMapper registration - consolidated mapper profiles for all entities
-builder.Services.AddAutoMapper(typeof(RemittanceProfile), 
+builder.Services.AddAutoMapper(typeof(RemittanceProfile),
     typeof(ConfigurationMapperProfile),
     typeof(SwiftPay.Profiles.KYCRecordMapperProfile),
     typeof(SwiftPay.Profiles.NotificationAlertMapperProfile),

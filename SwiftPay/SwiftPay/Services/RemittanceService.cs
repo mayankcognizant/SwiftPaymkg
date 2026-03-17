@@ -23,10 +23,7 @@ namespace SwiftPay.Services
             // Use AutoMapper to map DTO to entity
             var entity = _mapper.Map<RemittanceRequest>(dto);
 
-            // set audit/default fields
-            entity.CreatedDate = System.DateTime.UtcNow;
-            entity.UpdateDate = System.DateTime.UtcNow;
-            entity.IsDeleted = false;
+           
 
             var created = await _repo.CreateAsync(entity);
             return created;

@@ -27,6 +27,7 @@ namespace SwiftPay.Config.Configuration
 
             builder.Property(a => a.RequestedDate).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(a => a.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property(a => a.UpdatedDate).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(a => a.IsDeleted).HasDefaultValue(false);
         }
 
@@ -44,6 +45,7 @@ namespace SwiftPay.Config.Configuration
 
             builder.Property(c => c.RequestedDate).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(c => c.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property(a => a.UpdatedDate).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(c => c.IsDeleted).HasDefaultValue(false);
         }
 
@@ -65,6 +67,7 @@ namespace SwiftPay.Config.Configuration
                 .HasDefaultValue(RefundStatus.Initiated);
 
             builder.Property(r => r.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            builder.Property(a => a.UpdatedDate).HasDefaultValueSql("GETUTCDATE()");
             builder.Property(r => r.IsDeleted).HasDefaultValue(false);
         }
     }
