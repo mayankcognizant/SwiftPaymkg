@@ -1,13 +1,15 @@
 using System;
-using SwiftPay.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace SwiftPay.Domain.Remittance.Entities
+namespace SwiftPay.DTOs.UserCustomerDTO
 {
-    public class AuditLog
+    public class AuditLogResponseDto
     {
         public int AuditID { get; set; }
 
         public int UserID { get; set; }
+
+        public string UserName { get; set; }
 
         public string Action { get; set; }
 
@@ -16,12 +18,5 @@ namespace SwiftPay.Domain.Remittance.Entities
         public DateTime Timestamp { get; set; }
 
         public DateTime CreatedAt { get; set; }
-
-        public DateTime UpdatedAt { get; set; }
-
-        public bool IsDeleted { get; set; }
-
-        // Navigation
-        public User User { get; set; }
     }
 }

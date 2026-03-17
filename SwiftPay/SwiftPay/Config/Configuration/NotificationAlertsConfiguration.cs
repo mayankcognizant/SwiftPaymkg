@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SwiftPay.Constants.Enums;
 using SwiftPay.Domain.Notification.Entities;
-using Model;
+using SwiftPay.Models;
 
 namespace SwiftPay.Config.Configuration
 {
@@ -34,8 +34,9 @@ namespace SwiftPay.Config.Configuration
                 .HasMaxLength(50)
                 .HasDefaultValue(NotificationStatus.Unread);
 
-            builder.Property(n => n.CreatedDate)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            // Timestamp when notification was read (nullable)
+            builder.Property(n => n.ReadAt)
+                .IsRequired(false);
 
             // CreatedAt with default current timestamp
             builder.Property(n => n.CreatedAt)
@@ -56,7 +57,7 @@ namespace SwiftPay.Config.Configuration
             builder.HasOne(n => n.User)
                 .WithMany()
                 .HasForeignKey(n => n.UserID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

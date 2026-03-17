@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SwiftPay.Migrations
 {
     /// <inheritdoc />
-    public partial class SwiftPayDb : Migration
+    public partial class FinalizeSwiftPayModels : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -265,7 +265,7 @@ namespace SwiftPay.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Role",
+                name: "Roles",
                 columns: table => new
                 {
                     RoleId = table.Column<int>(type: "int", nullable: false)
@@ -277,7 +277,7 @@ namespace SwiftPay.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Role", x => x.RoleId);
+                    table.PrimaryKey("PK_Roles", x => x.RoleId);
                 });
 
             migrationBuilder.CreateTable(
@@ -323,7 +323,7 @@ namespace SwiftPay.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "User",
+                name: "Users",
                 columns: table => new
                 {
                     UserId = table.Column<int>(type: "int", nullable: false)
@@ -339,7 +339,7 @@ namespace SwiftPay.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_User", x => x.UserId);
+                    table.PrimaryKey("PK_Users", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
@@ -394,7 +394,7 @@ namespace SwiftPay.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AuditLog",
+                name: "AuditLogs",
                 columns: table => new
                 {
                     AuditID = table.Column<int>(type: "int", nullable: false)
@@ -402,21 +402,24 @@ namespace SwiftPay.Migrations
                     UserID = table.Column<int>(type: "int", nullable: false),
                     Action = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     Resource = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AuditLog", x => x.AuditID);
+                    table.PrimaryKey("PK_AuditLogs", x => x.AuditID);
                     table.ForeignKey(
-                        name: "FK_AuditLog_User_UserID",
+                        name: "FK_AuditLogs_Users_UserID",
                         column: x => x.UserID,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "CustomerProfile",
+                name: "Customers",
                 columns: table => new
                 {
                     CustomerID = table.Column<int>(type: "int", nullable: false)
@@ -433,17 +436,17 @@ namespace SwiftPay.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CustomerProfile", x => x.CustomerID);
+                    table.PrimaryKey("PK_Customers", x => x.CustomerID);
                     table.ForeignKey(
-                        name: "FK_CustomerProfile_User_UserID",
+                        name: "FK_Customers_Users_UserID",
                         column: x => x.UserID,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "KYCRecord",
+                name: "KYCRecords",
                 columns: table => new
                 {
                     KYCID = table.Column<int>(type: "int", nullable: false)
@@ -459,17 +462,17 @@ namespace SwiftPay.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_KYCRecord", x => x.KYCID);
+                    table.PrimaryKey("PK_KYCRecords", x => x.KYCID);
                     table.ForeignKey(
-                        name: "FK_KYCRecord_User_UserID",
+                        name: "FK_KYCRecords_Users_UserID",
                         column: x => x.UserID,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "NotificationAlert",
+                name: "NotificationAlerts",
                 columns: table => new
                 {
                     NotificationID = table.Column<int>(type: "int", nullable: false)
@@ -479,24 +482,24 @@ namespace SwiftPay.Migrations
                     Message = table.Column<string>(type: "text", nullable: false),
                     Category = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: "Unread"),
-                    CreatedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_NotificationAlert", x => x.NotificationID);
+                    table.PrimaryKey("PK_NotificationAlerts", x => x.NotificationID);
                     table.ForeignKey(
-                        name: "FK_NotificationAlert_User_UserID",
+                        name: "FK_NotificationAlerts_Users_UserID",
                         column: x => x.UserID,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRole",
+                name: "UserRoles",
                 columns: table => new
                 {
                     UserRoleId = table.Column<int>(type: "int", nullable: false)
@@ -510,23 +513,23 @@ namespace SwiftPay.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserRole", x => x.UserRoleId);
+                    table.PrimaryKey("PK_UserRoles", x => x.UserRoleId);
                     table.ForeignKey(
-                        name: "FK_UserRole_Role_RoleId",
+                        name: "FK_UserRoles_Roles_RoleId",
                         column: x => x.RoleId,
-                        principalTable: "Role",
+                        principalTable: "Roles",
                         principalColumn: "RoleId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserRole_User_UserId",
+                        name: "FK_UserRoles_Users_UserId",
                         column: x => x.UserId,
-                        principalTable: "User",
+                        principalTable: "Users",
                         principalColumn: "UserId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Beneficiary",
+                name: "Beneficiaries",
                 columns: table => new
                 {
                     BeneficiaryID = table.Column<int>(type: "int", nullable: false)
@@ -548,45 +551,45 @@ namespace SwiftPay.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Beneficiary", x => x.BeneficiaryID);
+                    table.PrimaryKey("PK_Beneficiaries", x => x.BeneficiaryID);
                     table.ForeignKey(
-                        name: "FK_Beneficiary_CustomerProfile_CustomerID",
+                        name: "FK_Beneficiaries_Customers_CustomerID",
                         column: x => x.CustomerID,
-                        principalTable: "CustomerProfile",
+                        principalTable: "Customers",
                         principalColumn: "CustomerID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AuditLog_UserID",
-                table: "AuditLog",
+                name: "IX_AuditLogs_UserID",
+                table: "AuditLogs",
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Beneficiary_AccountOrWalletNo",
-                table: "Beneficiary",
+                name: "IX_Beneficiaries_AccountOrWalletNo",
+                table: "Beneficiaries",
                 column: "AccountOrWalletNo",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Beneficiary_CustomerID",
-                table: "Beneficiary",
+                name: "IX_Beneficiaries_CustomerID",
+                table: "Beneficiaries",
                 column: "CustomerID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CustomerProfile_UserID",
-                table: "CustomerProfile",
+                name: "IX_Customers_UserID",
+                table: "Customers",
                 column: "UserID",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_KYCRecord_UserID",
-                table: "KYCRecord",
+                name: "IX_KYCRecords_UserID",
+                table: "KYCRecords",
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_NotificationAlert_UserID",
-                table: "NotificationAlert",
+                name: "IX_NotificationAlerts_UserID",
+                table: "NotificationAlerts",
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
@@ -600,26 +603,26 @@ namespace SwiftPay.Migrations
                 column: "RemitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_User_Email",
-                table: "User",
+                name: "IX_UserRoles_RoleId",
+                table: "UserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_UserId",
+                table: "UserRoles",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
                 column: "Email",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_User_Phone",
-                table: "User",
+                name: "IX_Users_Phone",
+                table: "Users",
                 column: "Phone",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRole_RoleId",
-                table: "UserRole",
-                column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserRole_UserId",
-                table: "UserRole",
-                column: "UserId");
         }
 
         /// <inheritdoc />
@@ -629,10 +632,10 @@ namespace SwiftPay.Migrations
                 name: "Amendments");
 
             migrationBuilder.DropTable(
-                name: "AuditLog");
+                name: "AuditLogs");
 
             migrationBuilder.DropTable(
-                name: "Beneficiary");
+                name: "Beneficiaries");
 
             migrationBuilder.DropTable(
                 name: "Cancellations");
@@ -650,10 +653,10 @@ namespace SwiftPay.Migrations
                 name: "FXQuote");
 
             migrationBuilder.DropTable(
-                name: "KYCRecord");
+                name: "KYCRecords");
 
             migrationBuilder.DropTable(
-                name: "NotificationAlert");
+                name: "NotificationAlerts");
 
             migrationBuilder.DropTable(
                 name: "PayoutInstructions");
@@ -683,19 +686,19 @@ namespace SwiftPay.Migrations
                 name: "SettlementBatch");
 
             migrationBuilder.DropTable(
-                name: "UserRole");
+                name: "UserRoles");
 
             migrationBuilder.DropTable(
-                name: "CustomerProfile");
+                name: "Customers");
 
             migrationBuilder.DropTable(
                 name: "RemittanceRequests");
 
             migrationBuilder.DropTable(
-                name: "Role");
+                name: "Roles");
 
             migrationBuilder.DropTable(
-                name: "User");
+                name: "Users");
         }
     }
 }

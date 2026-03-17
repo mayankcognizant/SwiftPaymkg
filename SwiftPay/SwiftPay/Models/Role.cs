@@ -1,7 +1,7 @@
 using System;
 using SwiftPay.Constants.Enums;
 
-namespace Model
+namespace SwiftPay.Models
 {
     public class Role
     {

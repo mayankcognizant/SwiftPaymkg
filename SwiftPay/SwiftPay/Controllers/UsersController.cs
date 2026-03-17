@@ -1,0 +1,199 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using SwiftPay.Services.Interfaces;
+using SwiftPay.DTOs.UserCustomerDTO;
+using SwiftPay.Models;
+
+namespace SwiftPay.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UsersController : ControllerBase
+    {
+        private readonly IUserService _service;
+
+        public UsersController(IUserService service)
+        {
+            _service = service;
+        }
+
+        /// <summary>
+        /// Create a new user
+        /// </summary>
+        /// <param name="dto">User creation data</param>
+        /// <returns>Created user object</returns>
+        /// <response code="200">User created successfully</response>
+        /// <response code="400">Invalid request data</response>
+        /// <response code="500">Server error</response>
+        [HttpPost]
+        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
+        {
+            if (dto == null)
+                return BadRequest(new { message = "Request body is required." });
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var created = await _service.CreateAsync(dto);
+                return Ok(new { message = "User created successfully.", data = created });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating the user.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get user by ID
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <returns>User object with roles</returns>
+        /// <response code="200">User found</response>
+        /// <response code="404">User not found</response>
+        /// <response code="500">Server error</response>
+        [HttpGet("{userId}")]
+        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetById(int userId)
+        {
+            try
+            {
+                var user = await _service.GetByIdAsync(userId);
+                if (user == null)
+                    return NotFound(new { message = $"User with ID {userId} not found." });
+
+                return Ok(new { message = "User retrieved successfully.", data = user });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving the user.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get user by email
+        /// </summary>
+        /// <param name="email">User email</param>
+        /// <returns>User object with roles</returns>
+        /// <response code="200">User found</response>
+        /// <response code="404">User not found</response>
+        /// <response code="500">Server error</response>
+        [HttpGet("email/{email}")]
+        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetByEmail(string email)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    return BadRequest(new { message = "Email is required." });
+
+                var user = await _service.GetByEmailAsync(email);
+                if (user == null)
+                    return NotFound(new { message = $"User with email {email} not found." });
+
+                return Ok(new { message = "User retrieved successfully.", data = user });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving the user.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get all users
+        /// </summary>
+        /// <returns>List of all active users</returns>
+        /// <response code="200">Users retrieved successfully</response>
+        /// <response code="500">Server error</response>
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<User>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAll()
+        {
+            try
+            {
+                var users = await _service.GetAllAsync();
+                return Ok(new { message = "Users retrieved successfully.", data = users });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving users.", error = ex.Message });
+            }
+        }
+    
+        /// <summary>
+        /// Update user information
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <param name="dto">User update data</param>
+        /// <returns>Updated user object</returns>
+        /// <response code="200">User updated successfully</response>
+        /// <response code="404">User not found</response>
+        /// <response code="400">Invalid request data</response>
+        /// <response code="500">Server error</response>
+        [HttpPut("{userId}")]
+        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Update(int userId, [FromBody] UpdateUserDto dto)
+        {
+            if (dto == null)
+                return BadRequest(new { message = "Request body is required." });
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var updated = await _service.UpdateAsync(userId, dto);
+                return Ok(new { message = "User updated successfully.", data = updated });
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("not found"))
+                    return NotFound(new { message = ex.Message });
+                
+                return StatusCode(500, new { message = "An error occurred while updating the user.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Delete (soft delete) a user
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <returns>Success or failure message</returns>
+        /// <response code="200">User deleted successfully</response>
+        /// <response code="404">User not found</response>
+        /// <response code="500">Server error</response>
+        [HttpDelete("{userId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Delete(int userId)
+        {
+            try
+            {
+                var result = await _service.DeleteAsync(userId);
+                if (!result)
+                    return NotFound(new { message = $"User with ID {userId} not found." });
+
+                return Ok(new { message = "User deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while deleting the user.", error = ex.Message });
+            }
+        }
+    }
+}

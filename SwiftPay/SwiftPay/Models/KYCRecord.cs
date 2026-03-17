@@ -1,5 +1,5 @@
 using System;
-using Model;
+using SwiftPay.Models;
 using SwiftPay.Constants.Enums;
 
 namespace SwiftPay.Domain.Remittance.Entities

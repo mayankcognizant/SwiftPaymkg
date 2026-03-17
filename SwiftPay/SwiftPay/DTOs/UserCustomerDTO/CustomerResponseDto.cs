@@ -1,24 +1,22 @@
 using System;
-using SwiftPay.Models;
 using SwiftPay.Constants.Enums;
+using SwiftPay.Domain.Remittance.Entities;
 
-namespace SwiftPay.Domain.Remittance.Entities
+namespace SwiftPay.DTOs.UserCustomerDTO
 {
-    public class CustomerProfile
+    // DTO for customer response data
+    public class CustomerResponseDto
     {
         public int CustomerID { get; set; }
 
-        // foreign key to User
         public int UserID { get; set; }
 
         public DateTime? DOB { get; set; }
 
-        // stored as JSON string or native JSON type
         public string AddressJSON { get; set; }
 
         public string Nationality { get; set; }
 
-        // using enum for ratings
         public CustomerRiskRating RiskRating { get; set; }
 
         public CustomerStatus Status { get; set; }
@@ -26,10 +24,5 @@ namespace SwiftPay.Domain.Remittance.Entities
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
-
-        public bool IsDeleted { get; set; }
-
-        // navigation
-        public User User { get; set; }
     }
 }
