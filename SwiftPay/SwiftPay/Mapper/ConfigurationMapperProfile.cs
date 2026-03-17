@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+<<<<<<< Updated upstream
 using SwiftPay.Constants.Enums;
 using SwiftPay.Domain.Remittance.Entities;
 using SwiftPay.DTOs.AmendmentDTO;
@@ -6,6 +7,11 @@ using SwiftPay.DTOs.RemittanceDTO;
 using SwiftPay.DTOs.UserCustomerDTO;
 using SwiftPay.Models;
 using System;
+=======
+using SwiftPay.Domain.Remittance.Entities;
+using SwiftPay.DTOs.ComplianceDTO;
+using SwiftPay.DTOs.RemittanceDTO;
+>>>>>>> Stashed changes
 
 namespace SwiftPay.Mapper
 {
@@ -24,6 +30,7 @@ namespace SwiftPay.Mapper
                 .ForMember(dest => dest.UpdateDate, opt => opt.Ignore())
                 .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
 
+<<<<<<< Updated upstream
             // ===== USER MAPPINGS =====
 
             // Map CreateUserDto -> User
@@ -169,6 +176,29 @@ namespace SwiftPay.Mapper
 
 
 
+=======
+            //// Optional: map back from entity to DTO for responses if needed
+            //CreateMap<RemittanceRequest, CreateRemittanceDto>()
+            //    .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.CustomerId))
+            //    .ForMember(dest => dest.BeneficiaryId, opt => opt.MapFrom(src => src.BeneficiaryId))
+            //    .ForMember(dest => dest.FromCurrency, opt => opt.MapFrom(src => src.FromCurrency))
+            //    .ForMember(dest => dest.ToCurrency, opt => opt.MapFrom(src => src.ToCurrency))
+            //    .ForMember(dest => dest.SendAmount, opt => opt.MapFrom(src => src.SendAmount));
+
+
+
+            //Compliance Check//
+            // --- 2. ADD YOUR COMPLIANCE CHECK MAPPING HERE ---
+            CreateMap<CreateComplianceCheckDto, ComplianceCheck>()
+                // Ignore the Primary Key (CheckId) - DB generates this
+                .ForMember(dest => dest.CheckId, opt => opt.Ignore())
+                // Ignore Audit Fields - Service layer sets these
+                .ForMember(dest => dest.CheckedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdateDate, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
+>>>>>>> Stashed changes
         }
     }
 }
