@@ -26,11 +26,26 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            // Foreign key to User
+            // CreatedAt with default current timestamp
+            builder.Property(a => a.CreatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // UpdatedAt with default current timestamp
+            builder.Property(a => a.UpdatedAt)
+                .IsRequired()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            // IsDeleted with default value false
+            builder.Property(a => a.IsDeleted)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            // Foreign key to User - Restrict delete to preserve audit trail
             builder.HasOne(a => a.User)
                 .WithMany()
                 .HasForeignKey(a => a.UserID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

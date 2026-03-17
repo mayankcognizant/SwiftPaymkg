@@ -1,6 +1,6 @@
 using System;
 
-namespace Model
+namespace SwiftPay.Models
 {
     public class UserRole
     {
@@ -8,15 +8,13 @@ namespace Model
 
         public int UserId { get; set; }
 
-        public int RoleId { get; set; }
+	public int RoleId { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+	public DateTime CreatedAt { get; set; }
 
-        public DateTime UpdatedAt { get; set; }
+	public DateTime UpdatedAt { get; set; }
 
-        public bool IsActive { get; set; }
-
-        // Navigation
+	public bool IsActive { get; set; }        // Navigation
         public virtual User User { get; set; }
 
         public virtual Role Role { get; set; }

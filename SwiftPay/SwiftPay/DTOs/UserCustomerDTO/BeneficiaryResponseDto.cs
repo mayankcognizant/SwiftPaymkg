@@ -1,14 +1,13 @@
 using System;
-using SwiftPay.Models;
 using SwiftPay.Constants.Enums;
 
-namespace SwiftPay.Domain.Remittance.Entities
+namespace SwiftPay.DTOs.UserCustomerDTO
 {
-    public class Beneficiary
+    // DTO for beneficiary response data
+    public class BeneficiaryResponseDto
     {
         public int BeneficiaryID { get; set; }
 
-        // foreign key to CustomerProfile
         public int CustomerID { get; set; }
 
         public string Name { get; set; }
@@ -34,10 +33,5 @@ namespace SwiftPay.Domain.Remittance.Entities
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
-
-        public bool IsDeleted { get; set; }
-
-        // navigation
-        public CustomerProfile Customer { get; set; }
     }
 }

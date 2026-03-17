@@ -2,12 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SwiftPay.Constants.Enums;
 using SwiftPay.Domain.Remittance.Entities;
-using Model;
+using SwiftPay.Models;
 
 namespace SwiftPay.Config.Configuration
 {
-    // User Configuration
-    public class UserConfiguration : IEntityTypeConfiguration<User>
+    // User Configuration for Identity and KYC
+    public class UserIdentityKycConfiguration : IEntityTypeConfiguration<User>
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
@@ -64,7 +64,7 @@ namespace SwiftPay.Config.Configuration
     }
 
     // Role Configuration
-    public class RoleConfiguration : IEntityTypeConfiguration<Role>
+    public class RoleIdentityKycConfiguration : IEntityTypeConfiguration<Role>
     {
         public void Configure(EntityTypeBuilder<Role> builder)
         {
@@ -97,7 +97,7 @@ namespace SwiftPay.Config.Configuration
     }
 
     // UserRole Configuration
-    public class UserRoleConfiguration : IEntityTypeConfiguration<UserRole>
+    public class UserRoleIdentityKycConfiguration : IEntityTypeConfiguration<UserRole>
     {
         public void Configure(EntityTypeBuilder<UserRole> builder)
         {
@@ -182,11 +182,11 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValue(false);
 
-            // Foreign key to User
+            // Foreign key to User - Restrict delete to preserve KYC records
             builder.HasOne(k => k.User)
                 .WithMany()
                 .HasForeignKey(k => k.UserID)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

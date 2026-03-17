@@ -1,7 +1,7 @@
 ﻿using System;
 using SwiftPay.Constants.Enums;
 
-namespace Model
+namespace SwiftPay.Models
 {
 	public class User
 	{
@@ -15,15 +15,15 @@ namespace Model
 
 		public string Password { get; set; }
 
-		public UserStatus Status { get; set; }
+	public UserStatus Status { get; set; }
 
-		public bool IsDeleted { get; set; }
+	public bool IsDeleted { get; set; }
 
-		public DateTime CreatedAt { get; set; }
+	public DateTime CreatedAt { get; set; }
 
-		public DateTime UpdatedAt { get; set; }
+	public DateTime UpdatedAt { get; set; }
 
-		// Navigation
-		public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+	// Navigation
+	public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 	}
 }

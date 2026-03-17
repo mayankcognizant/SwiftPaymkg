@@ -1,5 +1,5 @@
 using System;
-using Model;
+using SwiftPay.Models;
 using SwiftPay.Constants.Enums;
 
 namespace SwiftPay.Domain.Notification.Entities
@@ -23,8 +23,8 @@ namespace SwiftPay.Domain.Notification.Entities
         // Status of notification
         public NotificationStatus Status { get; set; }
 
-        // Timestamp when created
-        public DateTimeOffset CreatedDate { get; set; }
+        // Timestamp when notification was read (null if unread)
+        public DateTime? ReadAt { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
