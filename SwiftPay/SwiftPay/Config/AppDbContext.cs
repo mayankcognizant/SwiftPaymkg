@@ -38,6 +38,13 @@ namespace SwiftPay.Configuration
 
          public DbSet<RateLock> RateLocks { get; set; }
 
+
+        //  (Post-Transaction)
+        public DbSet<Amendment> Amendments { get; set; }
+        public DbSet<Cancellation> Cancellations { get; set; }
+        public DbSet<RefundRef> RefundRefs { get; set; }
+        public DbSet<RemitReport> RemitReports { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

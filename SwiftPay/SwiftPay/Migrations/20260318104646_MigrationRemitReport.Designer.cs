@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SwiftPay.Configuration;
 
@@ -11,9 +12,11 @@ using SwiftPay.Configuration;
 namespace SwiftPay.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260318104646_MigrationRemitReport")]
+    partial class MigrationRemitReport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,11 +180,7 @@ namespace SwiftPay.Migrations
 
                     b.HasKey("AuditID");
 
-                    b.HasIndex("Resource");
-
                     b.HasIndex("UserID");
-
-                    b.HasIndex("Timestamp", "UserID");
 
                     b.ToTable("AuditLogs");
                 });
@@ -917,7 +916,7 @@ namespace SwiftPay.Migrations
 
                     b.HasKey("QuoteID");
 
-                    b.ToTable("FXQuotes");
+                    b.ToTable("FXQuote");
                 });
 
             modelBuilder.Entity("SwiftPay.FXModule.Api.Models.FeeRule", b =>
@@ -978,7 +977,7 @@ namespace SwiftPay.Migrations
 
                     b.HasKey("FeeRuleID");
 
-                    b.ToTable("FeeRules");
+                    b.ToTable("FeeRule");
                 });
 
             modelBuilder.Entity("SwiftPay.FXModule.Api.Models.RateLock", b =>
@@ -1028,7 +1027,7 @@ namespace SwiftPay.Migrations
 
                     b.HasKey("LockID");
 
-                    b.ToTable("RateLocks");
+                    b.ToTable("RateLock");
                 });
 
             modelBuilder.Entity("SwiftPay.Models.Document", b =>
@@ -1444,7 +1443,7 @@ namespace SwiftPay.Migrations
             modelBuilder.Entity("SwiftPay.Models.Document", b =>
                 {
                     b.HasOne("SwiftPay.Domain.Remittance.Entities.RemittanceRequest", "RemittanceRequest")
-                        .WithMany("Documents")
+                        .WithMany()
                         .HasForeignKey("RemitId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1455,7 +1454,7 @@ namespace SwiftPay.Migrations
             modelBuilder.Entity("SwiftPay.Models.RemitValidation", b =>
                 {
                     b.HasOne("SwiftPay.Domain.Remittance.Entities.RemittanceRequest", "RemittanceRequest")
-                        .WithMany("Validations")
+                        .WithMany()
                         .HasForeignKey("RemitId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1480,13 +1479,6 @@ namespace SwiftPay.Migrations
                     b.Navigation("Role");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("SwiftPay.Domain.Remittance.Entities.RemittanceRequest", b =>
-                {
-                    b.Navigation("Documents");
-
-                    b.Navigation("Validations");
                 });
 
             modelBuilder.Entity("SwiftPay.Models.Role", b =>
