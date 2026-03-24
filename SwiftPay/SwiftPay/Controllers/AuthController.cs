@@ -21,6 +21,11 @@ namespace SwiftPay.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Invalid registration data.", errors = ModelState });
+            }
+
             try
             {
                 var user = await _authService.RegisterAsync(dto);
@@ -28,7 +33,6 @@ namespace SwiftPay.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                // Keep controller thin: map service exception to a response code
                 return Conflict(new { message = ex.Message });
             }
         }
@@ -37,15 +41,20 @@ namespace SwiftPay.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Invalid login data.", errors = ModelState });
+            }
+
             try
             {
                 var result = await _authService.LoginAsync(dto);
                 return Ok(new { message = "Login successful.", data = result });
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
-                // Generic 401 for auth failures
-                return Unauthorized(new { message = "Invalid credentials" });
+                // Return specific message from service for better UX
+                return Unauthorized(new { message = ex.Message });
             }
         }
     }

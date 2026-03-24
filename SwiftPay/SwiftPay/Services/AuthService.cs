@@ -33,6 +33,9 @@ namespace SwiftPay.Services
             var existing = await _userRepo.GetByEmailAsync(dto.Email);
             if (existing != null) throw new InvalidOperationException("Email already registered.");
 
+            var existingPhone = await _userRepo.GetByPhoneAsync(dto.Phone);
+            if (existingPhone != null) throw new InvalidOperationException("Phone number already registered.");
+
             using var tx = await _db.Database.BeginTransactionAsync();
             try
             {
@@ -73,16 +76,16 @@ namespace SwiftPay.Services
         {
             var user = await _userRepo.GetByEmailAsync(dto.Email);
             if (user == null)
-                throw new InvalidOperationException("Invalid credentials.");
+                throw new InvalidOperationException("Invalid Email.");
 
             var hash = user.PasswordHash;
             if (string.IsNullOrEmpty(hash))
-                throw new InvalidOperationException("Invalid credentials.");
+                throw new InvalidOperationException("Account has no password set.");
 
             // Enhanced verify on background thread
             var verified = await Task.Run(() => BCrypt.Net.BCrypt.EnhancedVerify(dto.Password, hash));
             if (!verified)
-                throw new InvalidOperationException("Invalid credentials.");
+                throw new InvalidOperationException("Password is incorrect.");
 
             // Gather roles for claims
             var userRoles = await _userRoleRepo.GetByUserIdAsync(user.UserId);
