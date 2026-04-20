@@ -6,9 +6,9 @@ namespace SwiftPay.DTOs.UserCustomerDTO
     // DTO containing only required fields for creating a beneficiary
     public class CreateBeneficiaryDto
     {
-        [Required(ErrorMessage = "CustomerID is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "CustomerID must be a valid positive integer.")]
-        public int CustomerID { get; set; }
+        // CustomerID is nullable so that frontend (regular users) do not need to provide it.
+        // The controller will populate this from the caller's JWT.
+        public int? CustomerID { get; set; }
 
         [Required(ErrorMessage = "Name is required.")]
         [StringLength(255, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 255 characters.")]

@@ -3,7 +3,7 @@ namespace SwiftPay.Constants.Enums
     public enum CustomerRiskRating
     {
         Low,
-        Med,
+        Medium,
         High
     }
 

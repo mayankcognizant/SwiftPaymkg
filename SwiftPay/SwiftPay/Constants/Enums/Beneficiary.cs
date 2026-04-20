@@ -4,7 +4,7 @@ namespace SwiftPay.Constants.Enums
     {
         Account,
         CashPickup,
-        MobileWallet
+        MobileWallet,
     }
 
     public enum BeneficiaryVerificationStatus

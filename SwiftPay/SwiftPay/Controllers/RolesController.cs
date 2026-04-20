@@ -11,6 +11,7 @@ namespace SwiftPay.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class RolesController : ControllerBase
     {
         private readonly IRoleService _service;
@@ -19,30 +20,7 @@ namespace SwiftPay.Controllers
 
         public RolesController(IRoleService service, IUserRoleService userRoleService, IUserService userService) => (_service, _userRoleService, _userService) = (service, userRoleService, userService);
 
-        /// <summary>
-        /// Create a new role
-        /// </summary>
-        /// <param name="dto">Role creation data</param>
-        /// <returns>Created role object</returns>
-        /// <response code="200">Role created successfully</response>
-        /// <response code="400">Invalid request data</response>
-        /// <response code="500">Server error</response>
-        [HttpPost]
-        [ProducesResponseType(typeof(Role), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Create([FromBody] CreateRoleRequestDto dto)
-        {
-            try
-            {
-                var created = await _service.CreateAsync(dto);
-                return Ok(new { message = "Role created successfully.", data = created });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while creating the role.", error = ex.Message });
-            }
-        }
+        
         /// <summary>
         /// Get role by ID
         /// </summary>

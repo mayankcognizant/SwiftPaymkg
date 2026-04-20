@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SwiftPay.Config.Configuration;
 using SwiftPay.Models;
 using SwiftPay.Domain.Remittance.Entities;

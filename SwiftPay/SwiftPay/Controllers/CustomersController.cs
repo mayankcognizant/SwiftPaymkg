@@ -4,18 +4,26 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SwiftPay.Services.Interfaces;
 using SwiftPay.DTOs.UserCustomerDTO;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SwiftPay.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CustomersController : ControllerBase
     {
         private readonly ICustomerService _service;
+        private readonly IBeneficiaryService _beneficiaryService;
+        private readonly IUserService _userService;
 
-        public CustomersController(ICustomerService service)
+        public CustomersController(ICustomerService service, IBeneficiaryService beneficiaryService, IUserService userService)
         {
             _service = service;
+            _beneficiaryService = beneficiaryService;
+            _userService = userService;
         }
 
         /// <summary>
@@ -60,6 +68,42 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                // Extract current user id from JWT (NameIdentifier preferred, fallback to sub)
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                // Role-based logic and validation:
+                var isAdmin = User.IsInRole("Admin");
+                var isOps = User.IsInRole("Ops");
+                var isCustomer = User.IsInRole("Customer");
+
+                if (isCustomer)
+                {
+                    // Customers can only create a profile for themselves; ignore any supplied UserID
+                    dto.UserID = currentUserId;
+                }
+                else if (isAdmin || isOps)
+                {
+                    // Admin/Ops: if they supplied a UserID use it, otherwise default to their own id
+                    if (!dto.UserID.HasValue)
+                        dto.UserID = currentUserId;
+                }
+                else
+                {
+                    // Other roles should not be allowed to set arbitrary user ids; default to token id
+                    dto.UserID = currentUserId;
+                }
+
+                // Final validation: ensure we have a UserID to associate the customer with
+                if (!dto.UserID.HasValue)
+                {
+                    return BadRequest(new { message = "UserID is required." });
+                }
+
                 var created = await _service.CreateAsync(dto);
                 return Ok(new { message = "Customer created successfully.", data = created });
             }
@@ -73,7 +117,9 @@ namespace SwiftPay.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while creating the customer.", error = ex.Message });
+                // Surface inner exception message when available (helps diagnose SQL constraint errors)
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new { message = "An error occurred while creating the customer.", error = inner });
             }
         }
 
@@ -96,6 +142,21 @@ namespace SwiftPay.Controllers
                 var customer = await _service.GetByIdAsync(customerId);
                 if (customer == null)
                     return NotFound(new { message = $"Customer with ID {customerId} not found." });
+
+                // Extract current user id from JWT (NameIdentifier preferred, fallback to sub)
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                // Allow Admins to bypass ownership checks
+                if (!User.IsInRole("Admin"))
+                {
+                    if (customer.UserID != currentUserId)
+                        return Forbid();
+                }
 
                 return Ok(new { message = "Customer retrieved successfully.", data = customer });
             }
@@ -140,6 +201,7 @@ namespace SwiftPay.Controllers
         /// <response code="200">Customers retrieved successfully</response>
         /// <response code="500">Server error</response>
         [HttpGet]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(IEnumerable<CustomerResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
@@ -174,6 +236,24 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                // Verify resource exists and perform ownership check
+                var existing = await _service.GetByIdAsync(customerId);
+                if (existing == null)
+                    return NotFound(new { message = $"Customer with ID {customerId} not found." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (existing.UserID != currentUserId)
+                        return Forbid();
+                }
+
                 var updated = await _service.UpdateAsync(customerId, dto);
                 return Ok(new { message = "Customer updated successfully.", data = updated });
             }
@@ -201,6 +281,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">Customer not found</response>
         /// <response code="500">Server error</response>
         [HttpPatch("{customerId}/risk-rating")]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(CustomerResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -230,6 +311,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">Customer not found</response>
         /// <response code="500">Server error</response>
         [HttpDelete("{customerId}")]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -242,6 +324,65 @@ namespace SwiftPay.Controllers
                     return NotFound(new { message = $"Customer with ID {customerId} not found." });
 
                 return Ok(new { message = "Customer deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while deleting the customer.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Delete the current customer's own profile (customers only). This endpoint ignores any client-supplied IDs and
+        /// deletes the customer linked to the JWT subject. Beneficiaries are also deleted.
+        /// </summary>
+        [HttpDelete("me")]
+        [Authorize(Roles = "Customer")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DeleteMe()
+        {
+            try
+            {
+                // Extract current user id from JWT (NameIdentifier preferred, fallback to sub)
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                var linkedCustomer = await _service.GetByUserIdAsync(currentUserId);
+                if (linkedCustomer == null)
+                    return NotFound(new { message = "Customer profile for current user not found." });
+
+                var targetCustomerId = linkedCustomer.CustomerID;
+                var deleted = await _service.DeleteAsync(targetCustomerId);
+                if (!deleted)
+                    return NotFound(new { message = $"Customer with ID {targetCustomerId} not found." });
+
+                // Cascade: delete all beneficiaries linked to this customer
+                try
+                {
+                    var beneficiaries = await _beneficiaryService.GetByCustomerIdAsync(targetCustomerId);
+                    if (beneficiaries != null)
+                    {
+                        foreach (var b in beneficiaries)
+                        {
+                            try { await _beneficiaryService.DeleteAsync(b.BeneficiaryID); } catch { }
+                        }
+                    }
+                }
+                catch { }
+
+                // Also delete the linked user account for customer-initiated deletes
+                try
+                {
+                    await _userService.DeleteAsync(currentUserId);
+                }
+                catch { }
+
+                return Ok(new { message = "Customer and linked user deleted successfully." });
             }
             catch (Exception ex)
             {

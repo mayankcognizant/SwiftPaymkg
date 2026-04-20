@@ -4,18 +4,24 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SwiftPay.Services.Interfaces;
 using SwiftPay.DTOs.UserCustomerDTO;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SwiftPay.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class BeneficiariesController : ControllerBase
     {
         private readonly IBeneficiaryService _service;
+        private readonly ICustomerService _customerService;
 
-        public BeneficiariesController(IBeneficiaryService service)
+        public BeneficiariesController(IBeneficiaryService service, ICustomerService customerService)
         {
             _service = service;
+            _customerService = customerService;
         }
 
         /// <summary>
@@ -35,6 +41,35 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                // Extract current user id from token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                // Look up the customer's profile linked to this user (if any)
+                var linkedCustomer = await _customerService.GetByUserIdAsync(currentUserId);
+
+                // Role-based behavior:
+                // - Customers: force CustomerID to their linked profile (do not trust JSON)
+                // - Admin/Ops: allow providing CustomerID; if omitted, default to their linked customer
+                if (User.IsInRole("Customer"))
+                {
+                    if (linkedCustomer == null)
+                        return BadRequest(new { message = "Please complete your profile first." });
+
+                    dto.CustomerID = linkedCustomer.CustomerID;
+                }
+                else if (User.IsInRole("Admin") || User.IsInRole("Ops"))
+                {
+                    if (!dto.CustomerID.HasValue)
+                    {
+                        if (linkedCustomer != null)
+                            dto.CustomerID = linkedCustomer.CustomerID;
+                        else
+                            return BadRequest(new { message = "CustomerID not provided and no linked customer found for your account." });
+                    }
+                }
+
                 var created = await _service.CreateAsync(dto);
                 return Ok(new { message = "Beneficiary created successfully.", data = created });
             }
@@ -48,7 +83,8 @@ namespace SwiftPay.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while creating the beneficiary.", error = ex.Message });
+                // Surface inner exception message to help diagnose SQL constraint errors (kept identical to customer flow)
+                return StatusCode(500, new { message = ex.InnerException?.Message ?? ex.Message });
             }
         }
 
@@ -72,6 +108,25 @@ namespace SwiftPay.Controllers
                 if (beneficiary == null)
                     return NotFound(new { message = $"Beneficiary with ID {beneficiaryId} not found." });
 
+                // Ownership check: only the owner customer or Admin/Ops can access
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                // If not Admin/Ops, verify that the beneficiary belongs to a customer owned by this user
+                if (!User.IsInRole("Admin") && !User.IsInRole("Ops"))
+                {
+                    // beneficiary.CustomerID refers to the customer; we need to ensure currentUserId owns that customer
+                    // Assume customers are linked to a UserID; use service to fetch customer ownership via beneficiary details if needed
+                    // Here we rely on beneficiary.CustomerID and call into service to validate ownership
+                    var customer = await _customerService.GetByIdAsync(beneficiary.CustomerID);
+                    if (customer == null) return Forbid();
+                    if (customer.UserID != currentUserId) return Forbid();
+                }
+
                 return Ok(new { message = "Beneficiary retrieved successfully.", data = beneficiary });
             }
             catch (Exception ex)
@@ -94,6 +149,20 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                if (!User.IsInRole("Admin") && !User.IsInRole("Ops"))
+                {
+                    var customer = await _customerService.GetByIdAsync(customerId);
+                    if (customer == null) return NotFound(new { message = $"Customer with ID {customerId} not found." });
+                    if (customer.UserID != currentUserId) return Forbid();
+                }
+
                 var beneficiaries = await _service.GetByCustomerIdAsync(customerId);
                 return Ok(new { message = "Beneficiaries retrieved successfully.", data = beneficiaries });
             }
@@ -110,6 +179,7 @@ namespace SwiftPay.Controllers
         /// <response code="200">Beneficiaries retrieved successfully</response>
         /// <response code="500">Server error</response>
         [HttpGet]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(IEnumerable<BeneficiaryResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
@@ -144,6 +214,21 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var existing = await _service.GetByIdAsync(beneficiaryId);
+                if (existing == null)
+                    return NotFound(new { message = $"Beneficiary with ID {beneficiaryId} not found." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin") && !User.IsInRole("Ops"))
+                {
+                    var customer = await _customerService.GetByIdAsync(existing.CustomerID);
+                    if (customer == null) return Forbid();
+                    if (customer.UserID != currentUserId) return Forbid();
+                }
+
                 var updated = await _service.UpdateAsync(beneficiaryId, dto);
                 return Ok(new { message = "Beneficiary updated successfully.", data = updated });
             }
@@ -171,6 +256,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">Beneficiary not found</response>
         /// <response code="500">Server error</response>
         [HttpPatch("{beneficiaryId}/verification-status")]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(BeneficiaryResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -207,6 +293,21 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var existing = await _service.GetByIdAsync(beneficiaryId);
+                if (existing == null)
+                    return NotFound(new { message = $"Beneficiary with ID {beneficiaryId} not found." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin") && !User.IsInRole("Ops"))
+                {
+                    var customer = await _customerService.GetByIdAsync(existing.CustomerID);
+                    if (customer == null) return Forbid();
+                    if (customer.UserID != currentUserId) return Forbid();
+                }
+
                 var result = await _service.DeleteAsync(beneficiaryId);
                 if (!result)
                     return NotFound(new { message = $"Beneficiary with ID {beneficiaryId} not found." });

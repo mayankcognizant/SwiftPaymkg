@@ -53,6 +53,9 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValue(false);
 
+            // Global query filter to hide soft-deleted notifications
+            builder.HasQueryFilter(n => !n.IsDeleted);
+
             // Foreign key to User
             builder.HasOne(n => n.User)
                 .WithMany()

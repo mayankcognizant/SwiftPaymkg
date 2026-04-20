@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using SwiftPay.Services.Interfaces;
 using SwiftPay.DTOs.UserCustomerDTO;
@@ -11,6 +12,7 @@ namespace SwiftPay.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class KYCRecordsController : ControllerBase
     {
         private readonly IKYCRecordService _service;
@@ -38,6 +40,29 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                // Ensure regular users can only create KYC for themselves.
+                // Admins and Compliance users may create records for any user.
+                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                if (!int.TryParse(idClaim, out var currentUserId))
+                {
+                    return Forbid();
+                }
+
+                var isPrivileged = User.IsInRole("Admin") || User.IsInRole("Compliance");
+
+                // For regular users, force the UserID to the caller's user id (from JWT).
+                if (!isPrivileged)
+                {
+                    dto.UserID = currentUserId;
+                }
+                else
+                {
+                    // Privileged callers (Admin/Compliance) may create for any user.
+                    // If they omit UserID, default to their own id.
+                    if (!dto.UserID.HasValue)
+                        dto.UserID = currentUserId;
+                }
+
                 var created = await _service.CreateAsync(dto);
                 return Ok(new { message = "KYC record created successfully.", data = created });
             }
@@ -64,6 +89,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">KYC record not found</response>
         /// <response code="500">Server error</response>
         [HttpGet("{kycId}")]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(typeof(KYCRecordResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -92,6 +118,8 @@ namespace SwiftPay.Controllers
         /// <response code="404">KYC record not found</response>
         /// <response code="500">Server error</response>
         [HttpGet("user/{userId}")]
+        // Allow owners to fetch their own KYC record; Admin and Compliance may fetch any.
+        [Authorize]
         [ProducesResponseType(typeof(KYCRecordResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -99,6 +127,19 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                // Authorization: owners or privileged roles only
+                var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                if (!int.TryParse(idClaim, out var currentUserId))
+                {
+                    return Forbid();
+                }
+
+                var isPrivileged = User.IsInRole("Admin") || User.IsInRole("Compliance");
+                if (!isPrivileged && userId != currentUserId)
+                {
+                    return Forbid();
+                }
+
                 var kyc = await _service.GetByUserIdAsync(userId);
                 if (kyc == null)
                     return NotFound(new { message = $"No KYC record found for user with ID {userId}." });
@@ -118,6 +159,7 @@ namespace SwiftPay.Controllers
         /// <response code="200">KYC records retrieved successfully</response>
         /// <response code="500">Server error</response>
         [HttpGet]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(typeof(IEnumerable<KYCRecordResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
@@ -143,6 +185,7 @@ namespace SwiftPay.Controllers
         /// <response code="400">Invalid pagination parameters</response>
         /// <response code="500">Server error</response>
         [HttpGet("pending")]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(typeof(KYCRecordListDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -174,6 +217,7 @@ namespace SwiftPay.Controllers
         /// <response code="409">Business conflict</response>
         /// <response code="500">Server error</response>
         [HttpPut("{kycId}")]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(typeof(KYCRecordResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -209,7 +253,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">KYC record not found</response>
         /// <response code="500">Server error</response>
         [HttpPatch("{kycId}/status")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(typeof(KYCRecordResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -239,7 +283,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">KYC record not found</response>
         /// <response code="500">Server error</response>
         [HttpPut("{kycId}/verify")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(typeof(KYCRecordResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -269,6 +313,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">KYC record not found</response>
         /// <response code="500">Server error</response>
         [HttpDelete("{kycId}")]
+        [Authorize(Roles = "Admin, Compliance")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]

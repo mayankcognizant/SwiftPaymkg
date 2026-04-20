@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SwiftPay.Configuration;
 
@@ -11,9 +12,11 @@ using SwiftPay.Configuration;
 namespace SwiftPay.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260326063710_MakeAuditUserIdNullable")]
+    partial class MakeAuditUserIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -147,10 +150,21 @@ namespace SwiftPay.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Resource")
                         .IsRequired()
@@ -162,12 +176,21 @@ namespace SwiftPay.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<int?>("UserID")
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserID")
                         .HasColumnType("int");
 
-                    b.HasKey("AuditID");
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("IsDeleted");
+                    b.HasKey("AuditID");
 
                     b.HasIndex("Resource");
 
@@ -707,12 +730,11 @@ namespace SwiftPay.Migrations
 
             modelBuilder.Entity("SwiftPay.Domain.Remittance.Entities.RemittanceRequest", b =>
                 {
-                    b.Property<int>("RemitId")
+                    b.Property<string>("RemitId")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(64)
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RemitId"));
+                        .HasColumnType("nvarchar(64)")
+                        .HasDefaultValueSql("NEWID()");
 
                     b.Property<int>("BeneficiaryId")
                         .HasColumnType("int");
@@ -1051,9 +1073,10 @@ namespace SwiftPay.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<int>("RemitId")
+                    b.Property<string>("RemitId")
+                        .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<DateTime>("UpdateDate")
                         .ValueGeneratedOnAdd()
@@ -1158,9 +1181,10 @@ namespace SwiftPay.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("RemitId")
+                    b.Property<string>("RemitId")
+                        .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<int>("Result")
                         .HasColumnType("int");
@@ -1382,6 +1406,17 @@ namespace SwiftPay.Migrations
                 });
 
             modelBuilder.Entity("SwiftPay.Domain.Notification.Entities.NotificationAlert", b =>
+                {
+                    b.HasOne("SwiftPay.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SwiftPay.Domain.Remittance.Entities.AuditLog", b =>
                 {
                     b.HasOne("SwiftPay.Models.User", "User")
                         .WithMany()

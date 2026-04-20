@@ -5,11 +5,15 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using SwiftPay.Services.Interfaces;
 using SwiftPay.DTOs.UserCustomerDTO;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SwiftPay.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class NotificationsController : ControllerBase
     {
         private readonly INotificationAlertService _service;
@@ -28,6 +32,7 @@ namespace SwiftPay.Controllers
         /// <response code="400">Invalid request data</response>
         /// <response code="500">Server error</response>
         [HttpPost]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(NotificationResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -73,6 +78,16 @@ namespace SwiftPay.Controllers
                 if (notification == null)
                     return NotFound(new { message = $"Notification with ID {notificationId} not found." });
 
+                // Only owner or Admin can access
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (notification.UserID != currentUserId) return Forbid();
+                }
+
                 return Ok(new { message = "Notification retrieved successfully.", data = notification });
             }
             catch (Exception ex)
@@ -95,6 +110,15 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (currentUserId != userId) return Forbid();
+                }
+
                 var notifications = await _service.GetByUserIdAsync(userId);
                 return Ok(new { message = "Notifications retrieved successfully.", data = notifications });
             }
@@ -118,6 +142,15 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (currentUserId != userId) return Forbid();
+                }
+
                 var notifications = await _service.GetUnreadByUserIdAsync(userId);
                 return Ok(new { message = "Unread notifications retrieved successfully.", data = notifications });
             }
@@ -134,6 +167,7 @@ namespace SwiftPay.Controllers
         /// <response code="200">Notifications retrieved successfully</response>
         /// <response code="500">Server error</response>
         [HttpGet]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(IEnumerable<NotificationResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
@@ -165,8 +199,20 @@ namespace SwiftPay.Controllers
         {
             try
             {
-                var notification = await _service.MarkAsReadAsync(notificationId);
-                return Ok(new { message = "Notification marked as read.", data = notification });
+                var notification = await _service.GetByIdAsync(notificationId);
+                if (notification == null) return NotFound(new { message = $"Notification with ID {notificationId} not found." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (notification.UserID != currentUserId) return Forbid();
+                }
+
+                var updated = await _service.MarkAsReadAsync(notificationId);
+                return Ok(new { message = "Notification marked as read.", data = updated });
             }
             catch (KeyNotFoundException ex)
             {
@@ -192,6 +238,15 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (currentUserId != userId) return Forbid();
+                }
+
                 var notifications = await _service.MarkAllAsReadAsync(userId);
                 return Ok(new { message = "All notifications marked as read.", data = notifications });
             }
@@ -217,6 +272,18 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var notification = await _service.GetByIdAsync(notificationId);
+                if (notification == null) return NotFound(new { message = $"Notification with ID {notificationId} does not exist in the system and cannot be deleted." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim)) return Forbid();
+                if (!int.TryParse(userIdClaim, out var currentUserId)) return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (notification.UserID != currentUserId) return Forbid();
+                }
+
                 var deleted = await _service.DeleteAsync(notificationId);
                 if (!deleted)
                     return NotFound(new { message = $"Notification with ID {notificationId} does not exist in the system and cannot be deleted." });

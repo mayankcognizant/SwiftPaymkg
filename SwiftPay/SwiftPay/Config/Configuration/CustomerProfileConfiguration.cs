@@ -13,8 +13,11 @@ namespace SwiftPay.Config.Configuration
             builder.HasKey(c => c.CustomerID);
             builder.Property(c => c.CustomerID).ValueGeneratedOnAdd();
 
-            builder.Property(c => c.UserID).IsRequired();
-            builder.HasIndex(c => c.UserID).IsUnique();
+                 builder.Property(c => c.UserID).IsRequired();
+                 // Unique UserID, but ignore soft-deleted profiles
+                 builder.HasIndex(c => c.UserID)
+                     .HasFilter("[IsDeleted] = 0")
+                     .IsUnique();
 
             builder.Property(c => c.DOB).HasColumnType("date");
             builder.Property(c => c.AddressJSON).HasColumnType("text");
@@ -47,6 +50,9 @@ namespace SwiftPay.Config.Configuration
             builder.Property(c => c.IsDeleted)
                 .IsRequired()
                 .HasDefaultValue(false);
+
+            // Global query filter to hide soft-deleted customer profiles
+            builder.HasQueryFilter(c => !c.IsDeleted);
 
             builder.HasOne(c => c.User)
                    .WithMany()

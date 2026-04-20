@@ -9,14 +9,24 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using SwiftPay.Configuration;
 using SwiftPay.Utilities;
 using SwiftPay.Models;
+using SwiftPay.Infrastructure.Interceptors;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database
-builder.Services.AddDbContext<AppDbContext>(opt =>
-	opt.UseSqlServer(builder.Configuration.GetConnectionString("SwiftPayDb")));
+// 1. Add HttpContextAccessor (required for audit logging interceptor)
+builder.Services.AddHttpContextAccessor();
 
-// 2. Automatic Registration (The "Short" Way)
+// 2. Register AuditLogInterceptor for automatic change tracking
+builder.Services.AddScoped<AuditLogInterceptor>();
+
+// 3. Database with Interceptor
+builder.Services.AddDbContext<AppDbContext>((sp, opt) =>
+{
+	opt.UseSqlServer(builder.Configuration.GetConnectionString("SwiftPayDb"));
+	opt.AddInterceptors(sp.GetRequiredService<AuditLogInterceptor>());
+});
+
+// 4. Automatic Registration (The "Short" Way)
 // This finds all classes ending in "Repository" or "Service" and registers them against their IInterface
 var assemblies = new[] { Assembly.GetExecutingAssembly() };
 foreach (var assembly in assemblies)
@@ -32,11 +42,11 @@ foreach (var assembly in assemblies)
 	}
 }
 
-// 3. Automatic AutoMapper
+// 5. Automatic AutoMapper
 // This finds ALL profiles in your project automatically
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// 4. Controllers & JSON (global authorization applied)
+// 6. Controllers & JSON (global authorization applied)
 
 builder.Services.Configure<JwtTokenSettings>(builder.Configuration.GetSection("Jwt"));
 

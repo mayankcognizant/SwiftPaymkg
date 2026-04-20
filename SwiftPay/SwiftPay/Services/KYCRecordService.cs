@@ -27,15 +27,21 @@ namespace SwiftPay.Services
 
         public async Task<KYCRecordResponseDto> CreateAsync(CreateKYCRecordDto dto)
         {
+            // Ensure UserID is provided (controller should set this from JWT for non-privileged callers)
+            if (!dto.UserID.HasValue)
+                throw new KeyNotFoundException("UserID not provided.");
+
+            var userId = dto.UserID.Value;
+
             // Validate that User exists - BUSINESS LOGIC
-            var user = await _userRepo.GetByIdAsync(dto.UserID);
+            var user = await _userRepo.GetByIdAsync(userId);
             if (user == null)
-                throw new KeyNotFoundException($"User with ID {dto.UserID} does not exist.");
+                throw new KeyNotFoundException($"User with ID {userId} does not exist.");
 
             // Check if KYC record already exists for this user - BUSINESS LOGIC
-            var existingKyc = await _repo.GetByUserIdAsync(dto.UserID);
+            var existingKyc = await _repo.GetByUserIdAsync(userId);
             if (existingKyc != null)
-                throw new InvalidOperationException($"A KYC record already exists for User ID {dto.UserID}.");
+                throw new InvalidOperationException($"A KYC record already exists for User ID {userId}.");
 
             // Use AutoMapper to map DTO to entity
             var entity = _mapper.Map<KYCRecord>(dto);

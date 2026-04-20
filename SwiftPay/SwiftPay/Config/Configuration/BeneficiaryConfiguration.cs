@@ -37,7 +37,9 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.HasIndex(b => b.AccountOrWalletNo)
+            // Make AccountOrWalletNo unique per customer and ignore soft-deleted rows
+            builder.HasIndex(b => new { b.CustomerID, b.AccountOrWalletNo })
+                .HasFilter("[IsDeleted] = 0")
                 .IsUnique();
 
             builder.Property(b => b.IFSC_IBAN_SWIFT)
@@ -72,6 +74,9 @@ namespace SwiftPay.Config.Configuration
             builder.Property(b => b.IsDeleted)
                 .IsRequired()
                 .HasDefaultValue(false);
+
+            // Global query filter to hide soft-deleted beneficiaries
+            builder.HasQueryFilter(b => !b.IsDeleted);
 
             // Restrict cascade delete to prevent accidental data loss
             builder.HasOne(b => b.Customer)

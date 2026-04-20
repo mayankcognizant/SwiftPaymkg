@@ -11,6 +11,8 @@ namespace SwiftPay.Config.Configuration
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
+            builder.ToTable("[User]");
+
             builder.HasKey(u => u.UserId);
             builder.Property(u => u.UserId).ValueGeneratedOnAdd();
 
@@ -18,16 +20,20 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasMaxLength(255);
 
-            // Email with UNIQUE constraint
+            // Email with filtered UNIQUE constraint (ignore soft-deleted rows)
             builder.Property(u => u.Email)
                 .IsRequired()
                 .HasMaxLength(255);
-            builder.HasIndex(u => u.Email).IsUnique();
+            builder.HasIndex(u => u.Email)
+                   .HasFilter("[IsDeleted] = 0")
+                   .IsUnique();
 
-            // Phone with UNIQUE constraint
+            // Phone with filtered UNIQUE constraint
             builder.Property(u => u.Phone)
                 .HasMaxLength(50);
-            builder.HasIndex(u => u.Phone).IsUnique();
+            builder.HasIndex(u => u.Phone)
+                   .HasFilter("[IsDeleted] = 0")
+                   .IsUnique();
 
             // PasswordHash (only the hash is stored)
             builder.Property(u => u.PasswordHash)
@@ -45,6 +51,9 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValue(false);
 
+            // Global query filter - hide soft-deleted users by default
+            builder.HasQueryFilter(u => !u.IsDeleted);
+
             // CreatedAt with default current timestamp
             builder.Property(u => u.CreatedAt)
                 .IsRequired()
@@ -55,11 +64,11 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            // Navigation
+            // Navigation (restrict deletes to preserve history)
             builder.HasMany(u => u.UserRoles)
                 .WithOne(ur => ur.User)
                 .HasForeignKey(ur => ur.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 
@@ -88,11 +97,14 @@ namespace SwiftPay.Config.Configuration
             builder.HasMany(r => r.UserRoles)
                 .WithOne(ur => ur.Role)
                 .HasForeignKey(ur => ur.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
-                
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Property(r => r.IsDeleted)
                 .IsRequired()
                 .HasDefaultValue(false);
+
+            // Global query filter to hide soft-deleted roles
+            builder.HasQueryFilter(r => !r.IsDeleted);
         }
     }
 
@@ -119,20 +131,28 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValue(true);
 
-            // Foreign keys
+            // Foreign keys - restrict deletes
             builder.HasOne(ur => ur.User)
                 .WithMany(u => u.UserRoles)
                 .HasForeignKey(ur => ur.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
-                
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Property(ur => ur.IsDeleted)
                 .IsRequired()
                 .HasDefaultValue(false);
+
+            // Ensure (UserId, RoleId) is unique while ignoring soft-deleted rows
+            builder.HasIndex(ur => new { ur.UserId, ur.RoleId })
+                   .HasFilter("[IsDeleted] = 0")
+                   .IsUnique();
+
+            // Global query filter to hide soft-deleted user-role assignments
+            builder.HasQueryFilter(ur => !ur.IsDeleted);
         }
     }
 

@@ -12,6 +12,8 @@ using SwiftPay.DTOs.ComplianceDTO;
 using SwiftPay.DTOs.UserRoleDTO;
 using SwiftPay.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 
@@ -38,11 +40,11 @@ namespace SwiftPay.Mapper
             CreateMap<AuditLog, GetAuditLogDto>()
                 .ForMember(dest => dest.AuditID, opt => opt.MapFrom(src => src.AuditID))
                 .ForMember(dest => dest.UserID, opt => opt.MapFrom(src => src.UserID))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Name : "Unknown"))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserID.HasValue ? src.UserID.ToString() : "System"))
                 .ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.Action))
                 .ForMember(dest => dest.Resource, opt => opt.MapFrom(src => src.Resource))
                 .ForMember(dest => dest.Timestamp, opt => opt.MapFrom(src => src.Timestamp))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore());
 
             // ===== ROLE MAPPINGS =====
 
@@ -106,18 +108,6 @@ namespace SwiftPay.Mapper
                 .ForMember(dest => dest.RateApplied, opt => opt.MapFrom(src => src.RateApplied))
                 .ForMember(dest => dest.FeeApplied, opt => opt.MapFrom(src => src.FeeApplied))
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate));
-
-            // ===== AUDIT LOG MAPPINGS =====
-
-            // Map AuditLog -> GetAuditLogDto
-            CreateMap<AuditLog, GetAuditLogDto>()
-                .ForMember(dest => dest.AuditID, opt => opt.MapFrom(src => src.AuditID))
-                .ForMember(dest => dest.UserID, opt => opt.MapFrom(src => src.UserID))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Name : "Unknown"))
-                .ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.Action))
-                .ForMember(dest => dest.Resource, opt => opt.MapFrom(src => src.Resource))
-                .ForMember(dest => dest.Timestamp, opt => opt.MapFrom(src => src.Timestamp))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
 
             // ===== ROLE MAPPINGS =====
 
@@ -250,7 +240,7 @@ namespace SwiftPay.Mapper
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt))
-                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles))
+                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Where(ur => !ur.IsDeleted)))
                 .ForSourceMember(src => src.PasswordHash, opt => opt.DoNotValidate());
 
             // Map User -> AuthResponseDto (safe user info for auth responses)
@@ -261,7 +251,7 @@ namespace SwiftPay.Mapper
                 .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt))
-                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles))
+                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UserRoles.Where(ur => !ur.IsDeleted)))
                 .ForSourceMember(src => src.PasswordHash, opt => opt.DoNotValidate());
 
             // Map UserRole -> UserRoleDto

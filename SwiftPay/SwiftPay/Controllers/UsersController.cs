@@ -4,11 +4,15 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using SwiftPay.Services.Interfaces;
 using SwiftPay.DTOs.UserCustomerDTO;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SwiftPay.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _service;
@@ -69,6 +73,20 @@ namespace SwiftPay.Controllers
                 if (user == null)
                     return NotFound(new { message = $"User with ID {userId} not found." });
 
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                // Admins can view any user
+                if (!User.IsInRole("Admin"))
+                {
+                    if (user.UserId != currentUserId)
+                        return Forbid();
+                }
+
                 return Ok(new { message = "User retrieved successfully.", data = user });
             }
             catch (Exception ex)
@@ -86,6 +104,7 @@ namespace SwiftPay.Controllers
         /// <response code="404">User not found</response>
         /// <response code="500">Server error</response>
         [HttpGet("email/{email}")]
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -112,6 +131,7 @@ namespace SwiftPay.Controllers
         /// <response code="200">Users retrieved successfully</response>
         /// <response code="500">Server error</response>
         [HttpGet]
+        [Authorize(Roles = "Admin,Ops")]
         [ProducesResponseType(typeof(IEnumerable<UserResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
@@ -146,6 +166,23 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var existing = await _service.GetByIdAsync(userId);
+                if (existing == null)
+                    return NotFound(new { message = $"User with ID {userId} not found." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (existing.UserId != currentUserId)
+                        return Forbid();
+                }
+
                 var updated = await _service.UpdateAsync(userId, dto);
                 return Ok(new { message = "User updated successfully.", data = updated });
             }
@@ -179,6 +216,23 @@ namespace SwiftPay.Controllers
         {
             try
             {
+                var existing = await _service.GetByIdAsync(userId);
+                if (existing == null)
+                    return NotFound(new { message = $"User with ID {userId} not found." });
+
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Forbid();
+
+                if (!int.TryParse(userIdClaim, out var currentUserId))
+                    return Forbid();
+
+                if (!User.IsInRole("Admin"))
+                {
+                    if (existing.UserId != currentUserId)
+                        return Forbid();
+                }
+
                 var result = await _service.DeleteAsync(userId);
                 if (!result)
                     return NotFound(new { message = $"User with ID {userId} not found." });
@@ -190,5 +244,21 @@ namespace SwiftPay.Controllers
                 return StatusCode(500, new { message = "An error occurred while deleting the user.", error = ex.Message });
             }
         }
+
+// Practice
+        // [HttpPost("create")]
+        // [Authorize(Roles = "Admin")]
+        // public async Task<IActionResult> createUser([FromQuery]int userId,[FromBody] CreateUserDto dto)
+        // {
+        //     try
+        //     {
+        //         var created = await _service.CreateAsync(dto);
+        //         return Ok(created);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return StatusCode(500, new { message = "An error occurred while creating the user.", error = ex.Message });
+        //     }
+        // }
     }
 }

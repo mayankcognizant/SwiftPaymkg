@@ -27,10 +27,13 @@ namespace SwiftPay.Services
 
         public async Task<BeneficiaryResponseDto> CreateAsync(CreateBeneficiaryDto dto)
         {
+            // Validate that CustomerID is present
+            var customerId = dto.CustomerID ?? throw new InvalidOperationException("CustomerID is required to create a beneficiary.");
+
             // Validate that Customer exists - BUSINESS LOGIC
-            var customer = await _customerRepo.GetByIdAsync(dto.CustomerID);
+            var customer = await _customerRepo.GetByIdAsync(customerId);
             if (customer == null)
-                throw new KeyNotFoundException($"Customer with ID {dto.CustomerID} does not exist.");
+                throw new KeyNotFoundException($"Customer with ID {customerId} does not exist.");
 
             // Use AutoMapper to map DTO to entity
             var entity = _mapper.Map<Beneficiary>(dto);

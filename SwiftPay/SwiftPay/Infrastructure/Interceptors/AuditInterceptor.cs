@@ -51,13 +51,10 @@ namespace SwiftPay.Infrastructure.Interceptors
 
                 var auditLog = new AuditLog
                 {
-                    UserID = userId,
+                    UserID = userId > 1 ? userId : null,  // Allow null for system/self-registration events
                     Action = action,
                     Resource = entry.Entity.GetType().Name,
-                    Timestamp = DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    IsDeleted = false
+                    Timestamp = DateTime.UtcNow
                 };
 
                 context.Set<AuditLog>().Add(auditLog);

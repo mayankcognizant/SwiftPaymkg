@@ -6,9 +6,8 @@ namespace SwiftPay.DTOs.UserCustomerDTO
 {
     public class CreateKYCRecordDto
     {
-        [Required(ErrorMessage = "UserID is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "UserID must be a valid positive integer.")]
-        public int UserID { get; set; }
+        // Allow omitting UserID for regular users; controller will assign from JWT claims.
+        public int? UserID { get; set; }
 
         [Required(ErrorMessage = "KYC Level is required.")]
         public KYCLevel KYCLevel { get; set; }

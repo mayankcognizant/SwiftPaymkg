@@ -12,7 +12,7 @@ namespace SwiftPay.Config.Configuration
             builder.Property(a => a.AuditID).ValueGeneratedOnAdd();
 
             builder.Property(a => a.UserID)
-                .IsRequired();
+                .IsRequired(false);  // Nullable - allows self-registration events
 
             builder.Property(a => a.Action)
                 .IsRequired()
@@ -26,20 +26,13 @@ namespace SwiftPay.Config.Configuration
                 .IsRequired()
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            // CreatedAt with default current timestamp
-            builder.Property(a => a.CreatedAt)
-                .IsRequired()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            // UpdatedAt with default current timestamp
-            builder.Property(a => a.UpdatedAt)
-                .IsRequired()
-                .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            // IsDeleted with default value false
+            // IsDeleted for soft delete with default value false
             builder.Property(a => a.IsDeleted)
                 .IsRequired()
                 .HasDefaultValue(false);
+
+            // Global query filter to hide soft-deleted audit logs
+            builder.HasQueryFilter(a => !a.IsDeleted);
 
             // Create index on UserID for faster queries
             builder.HasIndex(a => a.UserID);
@@ -50,11 +43,8 @@ namespace SwiftPay.Config.Configuration
             // Create composite index on Timestamp and UserID for date range queries
             builder.HasIndex(a => new { a.Timestamp, a.UserID });
 
-            // Foreign key to User - Restrict delete to preserve audit trail
-            builder.HasOne(a => a.User)
-                .WithMany()
-                .HasForeignKey(a => a.UserID)
-                .OnDelete(DeleteBehavior.Restrict);
+            // Index on IsDeleted to optimize soft delete queries
+            builder.HasIndex(a => a.IsDeleted);
         }
     }
 }

@@ -25,17 +25,16 @@ namespace SwiftPay.Repositories
             return entity;
         }
 
-        public async Task<AuditLog> GetByIdAsync(int auditId)
+        public async Task<AuditLog?> GetByIdAsync(int auditId)
         {
             return await _db.Set<AuditLog>()
-                .Include(a => a.User)
+                .IgnoreQueryFilters()  // Allow querying deleted records if needed
                 .FirstOrDefaultAsync(a => a.AuditID == auditId && !a.IsDeleted);
         }
 
         public async Task<IEnumerable<AuditLog>> GetByUserIdAsync(int userId)
         {
             return await _db.Set<AuditLog>()
-                .Include(a => a.User)
                 .Where(a => a.UserID == userId && !a.IsDeleted)
                 .OrderByDescending(a => a.Timestamp)
                 .ToListAsync();
@@ -44,7 +43,6 @@ namespace SwiftPay.Repositories
         public async Task<IEnumerable<AuditLog>> GetByResourceAsync(string resource)
         {
             return await _db.Set<AuditLog>()
-                .Include(a => a.User)
                 .Where(a => a.Resource == resource && !a.IsDeleted)
                 .OrderByDescending(a => a.Timestamp)
                 .ToListAsync();
@@ -53,7 +51,6 @@ namespace SwiftPay.Repositories
         public async Task<IEnumerable<AuditLog>> GetAllAsync()
         {
             return await _db.Set<AuditLog>()
-                .Include(a => a.User)
                 .Where(a => !a.IsDeleted)
                 .OrderByDescending(a => a.Timestamp)
                 .ToListAsync();
@@ -62,7 +59,6 @@ namespace SwiftPay.Repositories
         public async Task<IEnumerable<AuditLog>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             return await _db.Set<AuditLog>()
-                .Include(a => a.User)
                 .Where(a => a.Timestamp >= startDate && a.Timestamp <= endDate && !a.IsDeleted)
                 .OrderByDescending(a => a.Timestamp)
                 .ToListAsync();
@@ -76,9 +72,7 @@ namespace SwiftPay.Repositories
             int pageNumber = 1,
             int pageSize = 20)
         {
-            var query = _db.Set<AuditLog>()
-                .Include(a => a.User)
-                .Where(a => !a.IsDeleted);
+            IQueryable<AuditLog> query = _db.Set<AuditLog>();
 
             // Apply UserId filter if provided
             if (userId.HasValue)
@@ -111,12 +105,15 @@ namespace SwiftPay.Repositories
 
         public async Task<bool> DeleteAsync(int auditId)
         {
-            var auditLog = await GetByIdAsync(auditId);
+            var auditLog = await _db.Set<AuditLog>()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a => a.AuditID == auditId);
             if (auditLog == null)
                 return false;
 
+            // Soft delete: mark as deleted instead of physically removing
             auditLog.IsDeleted = true;
-            auditLog.UpdatedAt = DateTime.UtcNow;
+            _db.Set<AuditLog>().Update(auditLog);
             await _db.SaveChangesAsync();
             return true;
         }

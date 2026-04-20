@@ -20,7 +20,7 @@ namespace SwiftPay.Repositories
         public async Task<UserRole> CreateAsync(UserRole entity)
         {
             await _db.Set<UserRole>().AddAsync(entity);
-            await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync();
             return entity;
         }
 

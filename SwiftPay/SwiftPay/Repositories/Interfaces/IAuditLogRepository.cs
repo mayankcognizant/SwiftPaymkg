@@ -8,7 +8,7 @@ namespace SwiftPay.Repositories.Interfaces
     public interface IAuditLogRepository
     {
         Task<AuditLog> CreateAsync(AuditLog entity);
-        Task<AuditLog> GetByIdAsync(int auditId);
+        Task<AuditLog?> GetByIdAsync(int auditId);
         Task<IEnumerable<AuditLog>> GetByUserIdAsync(int userId);
         Task<IEnumerable<AuditLog>> GetByResourceAsync(string resource);
         Task<IEnumerable<AuditLog>> GetAllAsync();

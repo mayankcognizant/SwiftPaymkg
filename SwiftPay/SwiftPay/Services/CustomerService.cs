@@ -28,15 +28,18 @@ namespace SwiftPay.Services
 
         public async Task<CustomerResponseDto> CreateAsync(CreateCustomerDto dto)
         {
+            // Validate that UserID is present
+            var userId = dto.UserID ?? throw new InvalidOperationException("UserID is required to create a customer.");
+
             // Validate that User exists - BUSINESS LOGIC
-            var user = await _userRepo.GetByIdAsync(dto.UserID);
+            var user = await _userRepo.GetByIdAsync(userId);
             if (user == null)
-                throw new KeyNotFoundException($"User with ID {dto.UserID} does not exist.");
+                throw new KeyNotFoundException($"User with ID {userId} does not exist.");
 
             // Check if customer already exists for this user - BUSINESS LOGIC
-            var existingCustomer = await _repo.GetByUserIdAsync(dto.UserID);
+            var existingCustomer = await _repo.GetByUserIdAsync(userId);
             if (existingCustomer != null)
-                throw new InvalidOperationException($"A customer profile already exists for User ID {dto.UserID}.");
+                throw new InvalidOperationException($"A customer profile already exists for User ID {userId}.");
 
             // Use AutoMapper to map DTO to entity
             var entity = _mapper.Map<CustomerProfile>(dto);
