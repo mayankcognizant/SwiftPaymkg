@@ -3,7 +3,7 @@ using SwiftPay.Config.Configuration;
 using SwiftPay.Models;
 using SwiftPay.Domain.Remittance.Entities;
 using SwiftPay.Domain.Notification.Entities;
-using SwiftPay.FXModule.Api.Models;
+
 
 namespace SwiftPay.Configuration
 {
@@ -26,11 +26,14 @@ namespace SwiftPay.Configuration
         public DbSet<RemittanceRequest> RemittanceRequests { get; set; }
         public DbSet<Models.RemitValidation> RemitValidations { get; set; }
         public DbSet<Models.Document> RemittanceDocuments { get; set; }
+        public DbSet<Models.ReconciliationRecord> ReconciliationRecords { get; set; }
+        public DbSet<Models.SettlementBatch> SettlementBatches { get; set; }
 
         // DbSets for audit, KYC, and notification modules
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<KYCRecord> KYCRecords { get; set; }
         public DbSet<NotificationAlert> NotificationAlerts { get; set; }
+
 
 
         //  (Post-Transaction)
@@ -45,6 +48,7 @@ namespace SwiftPay.Configuration
         public DbSet<SwiftPay.FXModule.Api.Models.FeeRule> FeeRules { get; set; }
         public DbSet<SwiftPay.FXModule.Api.Models.RateLock> RateLocks { get; set; }
         
+        public DbSet<PayoutInstruction> PayoutInstructions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

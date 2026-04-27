@@ -22,10 +22,10 @@ namespace SwiftPay.Models
         public int ItemCount { get; set; } = 0;
 
        
-        public decimal TotalSendAmount { get; set; } = 0.0000m;
+        public decimal TotalSendAmount { get; set; }
 
       
-        public decimal TotalPayoutAmount { get; set; } = 0.0000m;
+        public decimal TotalPayoutAmount { get; set; } 
 
         public DateTime CreatedDate { get; set; } 
 
