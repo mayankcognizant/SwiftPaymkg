@@ -1,14 +1,16 @@
 ﻿using AutoMapper;
 using SwiftPay.Constants.Enums;
-using SwiftPay.Domain.Remittance.Entities;
 using SwiftPay.Domain.Notification.Entities;
+using SwiftPay.Domain.Remittance.Entities;
 using SwiftPay.DTOs.AmendmentDTO;
 using SwiftPay.DTOs.CancellationDTO;
+using SwiftPay.DTOs.ComplianceDTO;
+using SwiftPay.DTOs.ReconciliationDTO;
 using SwiftPay.DTOs.RefundRefDTO;
 using SwiftPay.DTOs.RemitReportDTO;
 using SwiftPay.DTOs.RemittanceDTO;
+using SwiftPay.DTOs.SettlementDTO;
 using SwiftPay.DTOs.UserCustomerDTO;
-using SwiftPay.DTOs.ComplianceDTO;
 using SwiftPay.DTOs.UserRoleDTO;
 using SwiftPay.Models;
 using System;
@@ -684,6 +686,40 @@ namespace SwiftPay.Mapper
 
             // RateLock -> RateLockResponseDto
             CreateMap<SwiftPay.FXModule.Api.Models.RateLock, SwiftPay.DTOs.FXQuoteDTO.RateLockResponseDto>();
-        }
+
+			//Reconciliation dto
+			CreateMap<CreateReconciliationDto, ReconciliationRecord>()
+				.ForMember(dest => dest.ReconID, opt => opt.Ignore())
+				.ForMember(dest => dest.Result, opt => opt.Ignore()) // Evaluated in the service
+				.ForMember(dest => dest.ReconDate, opt => opt.Ignore())
+				.ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+				.ForMember(dest => dest.UpdateDate, opt => opt.Ignore())
+				.ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
+			CreateMap<UpdateReconciliationDto, ReconciliationRecord>()
+				.ForMember(dest => dest.ReconID, opt => opt.Ignore())
+				.ForMember(dest => dest.ReferenceType, opt => opt.Ignore())
+				.ForMember(dest => dest.ReferenceID, opt => opt.Ignore())
+				.ForMember(dest => dest.ExpectedAmount, opt => opt.Ignore())
+				.ForMember(dest => dest.ActualAmount, opt => opt.Ignore())
+				.ForMember(dest => dest.ReconDate, opt => opt.Ignore())
+				.ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+				.ForMember(dest => dest.UpdateDate, opt => opt.Ignore())
+				.ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
+			// ==========================================
+			// ===== NEW: SETTLEMENT BATCH MAPPINGS =====
+			// ==========================================
+
+			CreateMap<GenerateBatchDto, SettlementBatch>()
+				.ForMember(dest => dest.BatchID, opt => opt.Ignore())
+				.ForMember(dest => dest.ItemCount, opt => opt.Ignore()) // Calculated in service
+				.ForMember(dest => dest.TotalSendAmount, opt => opt.Ignore()) // Calculated in service
+				.ForMember(dest => dest.TotalPayoutAmount, opt => opt.Ignore()) // Calculated in service
+				.ForMember(dest => dest.Status, opt => opt.Ignore()) // Defaulted in service
+				.ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+				.ForMember(dest => dest.UpdateDate, opt => opt.Ignore())
+				.ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+		}
     }
 }

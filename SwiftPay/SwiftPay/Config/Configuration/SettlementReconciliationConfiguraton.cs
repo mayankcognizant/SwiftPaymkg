@@ -11,12 +11,15 @@ namespace SwiftPay.Config.Configuration
         public void Configure(EntityTypeBuilder<ReconciliationRecord> builder)
         {
             builder.HasKey(r => r.ReconID);
+            // Ensure EF maps to the existing table name created by migrations (singular)
+            builder.ToTable("ReconciliationRecord");
             // store enum values as strings in DB
             builder.Property(r => r.ReferenceType)
-                   .HasConversion<string>()
-                   .IsRequired()
+			       .HasConversion<string>()
+				   .IsRequired()
                    .HasMaxLength(50);
-            builder.Property(r => r.ReferenceID).IsRequired().HasMaxLength(100).ValueGeneratedOnAdd();
+            // ReferenceID is an external reference provided by caller, not DB-generated
+            builder.Property(r => r.ReferenceID).IsRequired().HasMaxLength(100);
             builder.Property(r => r.ExpectedAmount).IsRequired().HasPrecision(18, 4);
             builder.Property(r => r.ActualAmount).IsRequired().HasPrecision(18, 4);
             builder.Property(r => r.Result)
@@ -34,7 +37,9 @@ namespace SwiftPay.Config.Configuration
         {
             builder.HasKey(s => s.BatchID);
 
-            builder.Property(s => s.Corridor)
+            builder.ToTable("SettlementBatch");
+
+			builder.Property(s => s.Corridor)
                    .IsRequired()
                    .HasMaxLength(10);
 

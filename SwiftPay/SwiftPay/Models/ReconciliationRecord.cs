@@ -6,6 +6,8 @@ namespace SwiftPay.Models
 {
     public class ReconciliationRecord
     {
+        [Key]
+        
         public int ReconID { get; set; }
 
         public ReferenceType ReferenceType { get; set; }  // Remit, Instruction, PartnerAck
