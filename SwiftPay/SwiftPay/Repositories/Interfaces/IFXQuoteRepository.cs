@@ -9,7 +9,9 @@ namespace SwiftPay.Repositories.Interfaces
         Task<FXQuote> AddQuoteAsync(FXQuote quote);
         Task<FXQuote> GetQuoteByIdAsync(string quoteId);
         
-        // --- ADDED: The system highway to update quote statuses ---
+        Task<IEnumerable<FXQuote>> GetAllQuotesAsync();
+        
+        // --- The system highway to update quote statuses ---
         Task<FXQuote> UpdateQuoteAsync(FXQuote quote);
     }
 }

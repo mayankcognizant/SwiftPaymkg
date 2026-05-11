@@ -877,6 +877,10 @@ namespace SwiftPay.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<string>("CustomerID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Fee")
                         .HasPrecision(18, 4)
                         .HasColumnType("decimal(18,4)");
@@ -1068,8 +1072,7 @@ namespace SwiftPay.Migrations
 
                     b.Property<string>("FileURI")
                         .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("nvarchar(2048)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
